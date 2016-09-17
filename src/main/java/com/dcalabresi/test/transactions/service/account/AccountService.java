@@ -1,6 +1,7 @@
 package com.dcalabresi.test.transactions.service.account;
 
 import com.dcalabresi.test.transactions.entity.Account;
+import com.dcalabresi.test.transactions.exception.AccountDoesNotExistException;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -34,7 +35,7 @@ public class AccountService {
 
     public Account getAccount(Integer accountId) {
         return Optional.ofNullable(accounts.get(accountId))
-                .orElseThrow(() -> new RuntimeException("The account id doesn't exist"));
+                .orElseThrow(() -> new AccountDoesNotExistException());
     }
 
     public Collection<Account> getAccounts() {
