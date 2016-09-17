@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 /**
  * Created by damian on 9/16/16.
  */
@@ -20,7 +22,7 @@ public class TransactionController {
     TransactionService transactionService;
 
     @RequestMapping(method = RequestMethod.POST, value = "")
-    public void addTransaction(@RequestBody TransactionDto dto) {
+    public void addTransaction(@RequestBody @Valid TransactionDto dto) {
         transactionService.addTransaction(dto.getOrigId(), dto.getDestId(), dto.getAmount());
     }
 }

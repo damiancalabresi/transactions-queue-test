@@ -6,6 +6,6 @@ Uso Spring Boot como la librería principal para ejecutar la API. La cual contie
 El codigo se divide en Controller, Service, Dto, Entity. No hay capas Repository ni Dao dado que no hay persistencia.
 Al iniciar la aplicación se crean 3 cuentas en memoria con valores aleatorios.
 Para encolar las transacciones pendientes uso una LinkedBlockingQueue, ya que es eficiente para encolar y desencolar y Thread-Safe.
-
+Uso la Validation-API de Java para validar el input de los servicios REST.
 
 

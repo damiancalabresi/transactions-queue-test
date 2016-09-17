@@ -1,5 +1,6 @@
 package com.dcalabresi.test.transactions.dto;
 
+import javax.validation.constraints.Min;
 import java.math.BigDecimal;
 
 /**
@@ -7,8 +8,13 @@ import java.math.BigDecimal;
  */
 public class TransactionDto {
 
+    @Min(value = 1, message = "The account id should be greater than zero")
     private Integer origId;
+
+    @Min(value = 1, message = "The account id should be greater than zero")
     private Integer destId;
+
+    @Min(value = 0, message = "The amount to transfer should be greater than zero")
     private BigDecimal amount;
 
     public TransactionDto() {
