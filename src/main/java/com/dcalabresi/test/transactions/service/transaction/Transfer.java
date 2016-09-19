@@ -21,23 +21,23 @@ public class Transfer {
     }
 
     public void makeTransfer() {
-        BigDecimal tax = calculateTax(origAccount, destAccount, amount);
-        checkAmountEnough(origAccount, amount.add(tax));
+        BigDecimal tax = calculateTax();
+        checkAmountEnough();
         origAccount.setBalance(origAccount.getBalance().subtract(amount).subtract(tax));
         destAccount.setBalance(destAccount.getBalance().add(amount));
     }
 
-    private void checkAmountEnough(Account account, BigDecimal amount) {
-        if(account.getBalance().compareTo(amount)<0)
-            throw new AmountNotEnoughException(account.getId(), account.getBalance(), amount);
+    private void checkAmountEnough() {
+        if(origAccount.getBalance().compareTo(amount)<0)
+            throw new AmountNotEnoughException(origAccount.getId(), origAccount.getBalance(), amount);
     }
 
-    private BigDecimal calculateTax(Account origAccount, Account destAccount, BigDecimal amount) {
-        BigDecimal percentage = decidePercentage(origAccount, destAccount);
+    private BigDecimal calculateTax() {
+        BigDecimal percentage = decidePercentage();
         return amount.multiply(percentage).divide(new BigDecimal(100));
     }
 
-    private BigDecimal decidePercentage(Account origAccount, Account destAccount) {
+    public BigDecimal decidePercentage() {
         if(origAccount.getCountry().equals(destAccount.getCountry())) {
             if(origAccount.getBank().equals(destAccount.getBank())) {
                 return BigDecimal.ZERO;

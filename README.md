@@ -56,4 +56,18 @@ http://localhost:8080/swagger-ui.html
 
 Se pueden ver estos en una interfaz y llamarlos desde la misma.
 
+## Test unitario
+Hice un UnitTest del metodo decidePercentage de la clase TransferTest como se pide en el enunciado.
+
+## Ejecutar
+Se puede ejecutar la API desde Intellij IDEA o Eclipse como si fuera un proyecto Java, con una función main.
+La otra alternativa es ejecutar la aplicación con Maven usando el plugin para Spring Boot:
+
+> mvn spring-boot:run
+
+Sino, se puede ejecutar el archivo Java llamado "transactions-queue-test.jar" que se encuentra en la raíz del proyecto:
+
+> java -jar transactions-queue-test.jar
+
+
 
