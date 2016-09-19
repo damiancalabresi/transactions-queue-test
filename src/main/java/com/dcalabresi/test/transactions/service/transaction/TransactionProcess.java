@@ -1,9 +1,14 @@
 package com.dcalabresi.test.transactions.service.transaction;
 
+import com.dcalabresi.test.transactions.entity.Account;
+import com.dcalabresi.test.transactions.exception.AmountNotEnoughException;
 import com.dcalabresi.test.transactions.service.account.AccountService;
 
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 /**
  * Created by damian on 9/17/16.
@@ -11,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TransactionProcess implements Runnable {
 
     private static AtomicInteger TRANSACTION_COUNTER = new AtomicInteger(0);
+    private static Lock ARBITRATOR = new ReentrantLock();
 
     private Integer transactionId;
     private AccountService accountService;
@@ -28,16 +34,45 @@ public class TransactionProcess implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Start running transaction: " + transactionId
-                + " - origId: " + origId
-                + " - destId: " + destId
-                + " - amount: " + amount);
+        runWithTryCatch(
+                aVoid1 -> TransactionLogger.INSTANCE.logStart(transactionId),
+                aVoid2 -> {
+                    Account origAccount = accountService.getAccount(origId);
+                    Account destAccount = accountService.getAccount(destId);
+                    runSynchronized(origAccount, destAccount, aVoid -> {
+                        checkAmountEnough(origAccount, amount);
+                        origAccount.setBalance(origAccount.getBalance().subtract(amount));
+                        destAccount.setBalance(destAccount.getBalance().add(amount));
+                        TransactionLogger.INSTANCE.logSuccess(transactionId, origId, destId,
+                                origAccount.getBalance(), destAccount.getBalance());
+                    });
+                },
+                ex -> TransactionLogger.INSTANCE.logError(transactionId, ex));
+    }
+
+    private void runWithTryCatch(Consumer<Void> doFirst, Consumer<Void> doInside, Consumer<Exception> doIfFail) {
+        doFirst.accept(null);
         try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            doInside.accept(null);
+        } catch (Exception ex) {
+            doIfFail.accept(ex);
         }
-        System.out.println("Finish transaction: "+ transactionId);
+    }
+
+    private void runSynchronized(Object firstObject, Object secondObject, Consumer<Void> aConsumer) {
+        // Locking before taking both account will prevent a deadlock if another thread is trying to take the second account.
+        ARBITRATOR.lock();
+        synchronized (firstObject) {
+            synchronized (secondObject) {
+                ARBITRATOR.unlock();
+                aConsumer.accept(null);
+            }
+        }
+    }
+
+    private void checkAmountEnough(Account account, BigDecimal amount) {
+        if(account.getBalance().compareTo(amount)<0)
+            throw new AmountNotEnoughException(account.getId(), account.getBalance(), amount);
     }
 
 }

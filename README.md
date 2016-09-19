@@ -39,8 +39,6 @@ Se reduce la posibilidad de error, pero esta sigue existiendo.
 
 Esto se conoce como "Dining philosophers problem" y la solución es utilizar un arbitrator, que bloquee al pedir una cuenta. En Java se implementa con la clase Lock.
 
-
-
 ## Errores manejados
 * No existe la cuenta con el id recibido (AccountDoesNotExistException)
 * No se puede procesar la transacción (TransactionRejectException)
