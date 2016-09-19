@@ -40,8 +40,9 @@ public class TransactionProcess implements Runnable {
                     Account origAccount = accountService.getAccount(origId);
                     Account destAccount = accountService.getAccount(destId);
                     runSynchronized(origAccount, destAccount, aVoid -> {
-                        checkAmountEnough(origAccount, amount);
-                        origAccount.setBalance(origAccount.getBalance().subtract(amount));
+                        BigDecimal tax = calculateTax(origAccount, destAccount, amount);
+                        checkAmountEnough(origAccount, amount.add(tax));
+                        origAccount.setBalance(origAccount.getBalance().subtract(amount).subtract(tax));
                         destAccount.setBalance(destAccount.getBalance().add(amount));
                         TransactionLogger.INSTANCE.logSuccess(transactionId, origId, destId,
                                 origAccount.getBalance(), destAccount.getBalance());
@@ -73,6 +74,23 @@ public class TransactionProcess implements Runnable {
     private void checkAmountEnough(Account account, BigDecimal amount) {
         if(account.getBalance().compareTo(amount)<0)
             throw new AmountNotEnoughException(account.getId(), account.getBalance(), amount);
+    }
+
+    private BigDecimal calculateTax(Account origAccount, Account destAccount, BigDecimal amount) {
+        BigDecimal percentage = decidePercentage(origAccount, destAccount);
+        return amount.multiply(percentage).divide(new BigDecimal(100));
+    }
+
+    private BigDecimal decidePercentage(Account origAccount, Account destAccount) {
+        if(origAccount.getCountry().equals(destAccount.getCountry())) {
+            if(origAccount.getBank().equals(destAccount.getBank())) {
+                return BigDecimal.ZERO;
+            } else {
+                return BigDecimal.ONE;
+            }
+        } else {
+            return new BigDecimal(5);
+        }
     }
 
 }
