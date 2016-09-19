@@ -1,6 +1,10 @@
 package com.dcalabresi.test.transactions.service.transaction;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Created by damian on 9/18/16.
@@ -8,15 +12,22 @@ import java.math.BigDecimal;
 public enum TransactionLogger {
     INSTANCE;
 
+    private BufferedWriter fileWriter;
+
     TransactionLogger() {
+        try {
+            this.fileWriter = Files.newBufferedWriter(Paths.get("transactions.txt"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void logStart(Integer transactionId) {
-        System.out.println("Transaction " + transactionId + " starting");
+        writeFile("Transaction " + transactionId + " starting");
     }
 
     public void logError(Integer transactionId, Exception ex) {
-        System.out.println("Transaction " + transactionId
+        writeFile("Transaction " + transactionId
                 + " finished with errors. Exception: "
                 + ex.getClass().getSimpleName()
                 + " - Message: " + ex.getMessage());
@@ -24,10 +35,22 @@ public enum TransactionLogger {
 
     public void logSuccess(Integer transactionId, Integer origAccountId, Integer destAccountId,
                            BigDecimal origBalance, BigDecimal destBalance) {
-        System.out.println("Transaction " + transactionId
+        writeFile("Transaction " + transactionId
                 + " finished with success. From account " + origAccountId
                 + " (" + origBalance
                 + ") To account " + destAccountId
                 + " (" + destBalance + ")");
     }
+
+    private void writeFile(String aString) {
+        try {
+            if (fileWriter != null) {
+                fileWriter.write(aString + "\n");
+                fileWriter.flush();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
