@@ -45,6 +45,8 @@ Esto se conoce como "Dining philosophers problem" y la solución es utilizar un 
 * No existe la cuenta con el id recibido (AccountDoesNotExistException)
 * No se puede procesar la transacción (TransactionRejectException)
 
+Los errores se manejan con el ControllerAdvice ErrorCustomController, el cual es detectado por Spring.
+
 ## Documentación
 Para auto-documentar los servicios REST uso la librería SpringFox, que integra Swagger a Spring Boot. En la URL:
 
