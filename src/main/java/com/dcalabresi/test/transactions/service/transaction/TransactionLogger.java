@@ -33,13 +33,10 @@ public enum TransactionLogger {
                 + " - Message: " + ex.getMessage());
     }
 
-    public void logSuccess(Integer transactionId, Integer origAccountId, Integer destAccountId,
-                           BigDecimal origBalance, BigDecimal destBalance) {
+    public void logSuccess(Integer transactionId, String successMessage) {
         writeFile("Transaction " + transactionId
-                + " finished with success. From account " + origAccountId
-                + " (" + origBalance
-                + ") To account " + destAccountId
-                + " (" + destBalance + ")");
+                + " finished with success. Message: "
+                + successMessage);
     }
 
     private void writeFile(String aString) {

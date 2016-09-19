@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Created by damian on 9/17/16.
@@ -36,61 +37,45 @@ public class TransactionProcess implements Runnable {
     public void run() {
         runWithTryCatch(
                 aVoid1 -> TransactionLogger.INSTANCE.logStart(transactionId),
-                aVoid2 -> {
-                    Account origAccount = accountService.getAccount(origId);
-                    Account destAccount = accountService.getAccount(destId);
-                    runSynchronized(origAccount, destAccount, aVoid -> {
-                        BigDecimal tax = calculateTax(origAccount, destAccount, amount);
-                        checkAmountEnough(origAccount, amount.add(tax));
-                        origAccount.setBalance(origAccount.getBalance().subtract(amount).subtract(tax));
-                        destAccount.setBalance(destAccount.getBalance().add(amount));
-                        TransactionLogger.INSTANCE.logSuccess(transactionId, origId, destId,
-                                origAccount.getBalance(), destAccount.getBalance());
-                    });
-                },
-                ex -> TransactionLogger.INSTANCE.logError(transactionId, ex));
+                () -> runTransaction(),
+                message -> TransactionLogger.INSTANCE.logSuccess(transactionId, message),
+                ex -> TransactionLogger.INSTANCE.logError(transactionId, ex)
+        );
     }
 
-    private void runWithTryCatch(Consumer<Void> doFirst, Consumer<Void> doInside, Consumer<Exception> doIfFail) {
+    private void runWithTryCatch(Consumer<Void> doFirst, Supplier<String> doInside, Consumer<String> doIfSuccess,
+                                 Consumer<Exception> doIfFail) {
         doFirst.accept(null);
         try {
-            doInside.accept(null);
+            String message = doInside.get();
+            doIfSuccess.accept(message);
         } catch (Exception ex) {
             doIfFail.accept(ex);
         }
     }
 
-    private void runSynchronized(Object firstObject, Object secondObject, Consumer<Void> aConsumer) {
+    private String runTransaction() {
+        Account origAccount = accountService.getAccount(origId);
+        Account destAccount = accountService.getAccount(destId);
+        return runSynchronized(origAccount, destAccount, () -> {
+            new Transfer(origAccount, destAccount, amount).makeTransfer();
+            return "From account " + origAccount.getId()
+                    + " (" + origAccount.getBalance() + ") To account " + destAccount.getId()
+                    + "(" + destAccount.getBalance() + ")";
+        });
+    }
+
+    private String runSynchronized(Object firstObject, Object secondObject, Supplier<String> aConsumer) {
         // Locking before taking both account will prevent a deadlock if another thread is trying to take the second account.
+        String message;
         ARBITRATOR.lock();
         synchronized (firstObject) {
             synchronized (secondObject) {
                 ARBITRATOR.unlock();
-                aConsumer.accept(null);
+                message = aConsumer.get();
             }
         }
-    }
-
-    private void checkAmountEnough(Account account, BigDecimal amount) {
-        if(account.getBalance().compareTo(amount)<0)
-            throw new AmountNotEnoughException(account.getId(), account.getBalance(), amount);
-    }
-
-    private BigDecimal calculateTax(Account origAccount, Account destAccount, BigDecimal amount) {
-        BigDecimal percentage = decidePercentage(origAccount, destAccount);
-        return amount.multiply(percentage).divide(new BigDecimal(100));
-    }
-
-    private BigDecimal decidePercentage(Account origAccount, Account destAccount) {
-        if(origAccount.getCountry().equals(destAccount.getCountry())) {
-            if(origAccount.getBank().equals(destAccount.getBank())) {
-                return BigDecimal.ZERO;
-            } else {
-                return BigDecimal.ONE;
-            }
-        } else {
-            return new BigDecimal(5);
-        }
+        return message;
     }
 
 }
